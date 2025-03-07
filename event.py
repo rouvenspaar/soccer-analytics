@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
+import json
 
 
 @dataclass
@@ -73,3 +74,46 @@ class Event:
     infraction: Optional[dict] = field(default=None)
     carry: Optional[dict] = field(default=None)
     possession: Optional[Possession] = field(default=None)
+
+
+def parse_event(data: Dict) -> Event:
+    return Event(
+        id=data["id"],
+        match_id=data["matchId"],
+        match_period=data["matchPeriod"],
+        minute=data["minute"],
+        second=data["second"],
+        match_timestamp=data["matchTimestamp"],
+        video_timestamp=data["videoTimestamp"],
+        related_event_id=data.get("relatedEventId"),
+        type=Type(**data["type"]),
+        location=Location(**data["location"]),
+        team=Team(**data["team"]),
+        opponent_team=Team(**data["opponentTeam"]),
+        player=Player(**data["player"]),
+        pass_=Pass(
+            accurate=data["pass"]["accurate"],
+            angle=data["pass"]["angle"],
+            height=data["pass"]["height"],
+            length=data["pass"]["length"],
+            recipient=Player(**data["pass"]["recipient"]) if data["pass"].get("recipient") else None,
+            end_location=Location(**data["pass"]["endLocation"])  # Renaming here!
+        ) if data.get("pass") else None,
+        possession=Possession(
+            id=data["possession"]["id"],
+            duration=data["possession"]["duration"],
+            types=data["possession"]["types"],
+            events_number=data["possession"]["eventsNumber"],
+            event_index=data["possession"]["eventIndex"],
+            start_location=Location(**data["possession"]["startLocation"]),
+            end_location=Location(**data["possession"]["endLocation"]),
+            team=Team(**data["possession"]["team"]),
+            attack=data["possession"]["attack"]
+        ) if data.get("possession") else None
+    )
+
+def load_events_from_json(filename: str) -> list[Event]:
+    with open(filename, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    return [parse_event(event) for event in data["events"]]
