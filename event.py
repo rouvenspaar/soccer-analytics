@@ -63,7 +63,7 @@ class Event:
     video_timestamp: float
     related_event_id: Optional[int]
     type: Type
-    location: Location
+    location: Optional[Location]
     team: Team
     opponent_team: Team
     player: Player
@@ -87,17 +87,17 @@ def parse_event(data: Dict) -> Event:
         video_timestamp=data["videoTimestamp"],
         related_event_id=data.get("relatedEventId"),
         type=Type(**data["type"]),
-        location=Location(**data["location"]),
+        location=Location(**data["location"]) if data.get("location") else None,  # No default value, uses Optional
         team=Team(**data["team"]),
         opponent_team=Team(**data["opponentTeam"]),
         player=Player(**data["player"]),
         pass_=Pass(
             accurate=data["pass"]["accurate"],
             angle=data["pass"]["angle"],
-            height=data["pass"]["height"],
+            height=data["pass"].get("height"),
             length=data["pass"]["length"],
             recipient=Player(**data["pass"]["recipient"]) if data["pass"].get("recipient") else None,
-            end_location=Location(**data["pass"]["endLocation"])  # Renaming here!
+            end_location=Location(**data["pass"]["endLocation"])
         ) if data.get("pass") else None,
         possession=Possession(
             id=data["possession"]["id"],
@@ -108,7 +108,7 @@ def parse_event(data: Dict) -> Event:
             start_location=Location(**data["possession"]["startLocation"]),
             end_location=Location(**data["possession"]["endLocation"]),
             team=Team(**data["possession"]["team"]),
-            attack=data["possession"]["attack"]
+            attack=data["possession"].get("attack")
         ) if data.get("possession") else None
     )
 
